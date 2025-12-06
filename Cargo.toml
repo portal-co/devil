@@ -1,0 +1,16 @@
+[workspace]
+resolver = "2"
+members = [
+    "devcontainers",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["portal-co <portal@portal-co.dev>"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/portal-co/devil"
+
+[workspace.dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
