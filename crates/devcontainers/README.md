@@ -8,6 +8,8 @@ This library provides strongly-typed representations of the [Dev Container speci
 
 ## Features
 
+- **`no_std` Compatible**: This crate is fully `no_std` compatible, using `alloc` for dynamic allocations. Perfect for embedded systems and constrained environments.
+
 - **Comprehensive Type Support**: Full coverage of devcontainer.json fields including:
   - Basic configuration (name, image, dockerFile)
   - Build configuration
@@ -19,13 +21,15 @@ This library provides strongly-typed representations of the [Dev Container speci
   - Docker Compose integration
   - And more!
 
+- **BTreeMap for Sorted Keys**: Uses `BTreeMap` instead of `HashMap` for deterministic ordering and `no_std` compatibility
+
 - **Non-exhaustive Structs**: All structs are marked with `#[non_exhaustive]`, allowing the library to add new fields in the future without breaking backward compatibility
 
 - **Default Trait**: All structs implement `Default`, making it easy to create instances and use a builder-like pattern
 
 - **Feature Flag: `allow-unknown-fields`**: Control how unknown JSON fields are handled:
   - **Default behavior**: Unknown fields cause deserialization errors, ensuring strict validation
-  - **With feature enabled**: Unknown fields are captured in an `additional_fields` HashMap, allowing forward compatibility with newer devcontainer.json versions
+  - **With feature enabled**: Unknown fields are captured in an `additional_fields` BTreeMap, allowing forward compatibility with newer devcontainer.json versions
 
 ## Usage
 

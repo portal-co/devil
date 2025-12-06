@@ -5,6 +5,8 @@
 //! This library provides strongly-typed representations of the Dev Container specification,
 //! allowing you to parse, validate, and work with devcontainer.json files in Rust.
 //!
+//! This is a `no_std` compatible crate that uses `alloc` for dynamic allocations.
+//!
 //! ## Features
 //!
 //! - `allow-unknown-fields`: When enabled, allows parsing JSON files with unknown fields.
@@ -24,8 +26,14 @@
 //! assert_eq!(devcontainer.name, Some("My Dev Container".to_string()));
 //! ```
 
+#![no_std]
+
+extern crate alloc;
+
+use alloc::collections::BTreeMap;
+use alloc::string::String;
+use alloc::vec::Vec;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// Main devcontainer.json configuration structure
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
@@ -50,7 +58,7 @@ pub struct DevContainer {
 
     /// Additional features or addons to install
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub features: Option<HashMap<String, serde_json::Value>>,
+    pub features: Option<BTreeMap<String, serde_json::Value>>,
 
     /// VS Code extensions to install
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -58,7 +66,7 @@ pub struct DevContainer {
 
     /// VS Code settings for the container
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub settings: Option<HashMap<String, serde_json::Value>>,
+    pub settings: Option<BTreeMap<String, serde_json::Value>>,
 
     /// Ports to forward from the container
     #[serde(skip_serializing_if = "Option::is_none", rename = "forwardPorts")]
@@ -66,7 +74,7 @@ pub struct DevContainer {
 
     /// Port attributes configuration
     #[serde(skip_serializing_if = "Option::is_none", rename = "portsAttributes")]
-    pub ports_attributes: Option<HashMap<String, PortAttributes>>,
+    pub ports_attributes: Option<BTreeMap<String, PortAttributes>>,
 
     /// Default port attributes for unspecified ports
     #[serde(
@@ -77,11 +85,11 @@ pub struct DevContainer {
 
     /// Environment variables for the container
     #[serde(skip_serializing_if = "Option::is_none", rename = "containerEnv")]
-    pub container_env: Option<HashMap<String, String>>,
+    pub container_env: Option<BTreeMap<String, String>>,
 
     /// Environment variables for remote processes
     #[serde(skip_serializing_if = "Option::is_none", rename = "remoteEnv")]
-    pub remote_env: Option<HashMap<String, String>>,
+    pub remote_env: Option<BTreeMap<String, String>>,
 
     /// User to run as in the container
     #[serde(skip_serializing_if = "Option::is_none", rename = "remoteUser")]
@@ -109,7 +117,7 @@ pub struct DevContainer {
 
     /// IDE-specific customizations
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub customizations: Option<HashMap<String, serde_json::Value>>,
+    pub customizations: Option<BTreeMap<String, serde_json::Value>>,
 
     /// Whether to use init process
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -150,7 +158,7 @@ pub struct DevContainer {
     /// Additional unknown fields when allow-unknown-fields feature is enabled
     #[cfg(feature = "allow-unknown-fields")]
     #[serde(flatten)]
-    pub additional_fields: HashMap<String, serde_json::Value>,
+    pub additional_fields: BTreeMap<String, serde_json::Value>,
 }
 
 /// Build configuration for the dev container
@@ -168,7 +176,7 @@ pub struct BuildConfig {
 
     /// Build arguments
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub args: Option<HashMap<String, String>>,
+    pub args: Option<BTreeMap<String, String>>,
 
     /// Target stage in multi-stage build
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -181,7 +189,7 @@ pub struct BuildConfig {
     /// Additional unknown fields when allow-unknown-fields feature is enabled
     #[cfg(feature = "allow-unknown-fields")]
     #[serde(flatten)]
-    pub additional_fields: HashMap<String, serde_json::Value>,
+    pub additional_fields: BTreeMap<String, serde_json::Value>,
 }
 
 /// Port specification (can be a number or string)
@@ -222,7 +230,7 @@ pub struct PortAttributes {
     /// Additional unknown fields when allow-unknown-fields feature is enabled
     #[cfg(feature = "allow-unknown-fields")]
     #[serde(flatten)]
-    pub additional_fields: HashMap<String, serde_json::Value>,
+    pub additional_fields: BTreeMap<String, serde_json::Value>,
 }
 
 /// Command specification (can be a string, array, or object)
@@ -234,7 +242,7 @@ pub enum CommandSpec {
     /// Array of command parts
     Array(Vec<String>),
     /// Object with multiple commands
-    Object(HashMap<String, String>),
+    Object(BTreeMap<String, String>),
 }
 
 /// Shutdown action
@@ -269,7 +277,7 @@ pub struct MountSpec {
     /// Additional unknown fields when allow-unknown-fields feature is enabled
     #[cfg(feature = "allow-unknown-fields")]
     #[serde(flatten)]
-    pub additional_fields: HashMap<String, serde_json::Value>,
+    pub additional_fields: BTreeMap<String, serde_json::Value>,
 }
 
 /// Docker Compose file specification
@@ -285,6 +293,8 @@ pub enum DockerComposeFile {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use alloc::string::ToString;
+    use alloc::vec;
 
     #[test]
     fn test_basic_devcontainer() {
@@ -423,7 +433,7 @@ mod tests {
             service: None,
             workspace_mount: None,
             #[cfg(feature = "allow-unknown-fields")]
-            additional_fields: HashMap::new(),
+            additional_fields: BTreeMap::new(),
         };
 
         let json = serde_json::to_string(&devcontainer).unwrap();

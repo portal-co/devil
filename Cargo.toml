@@ -1,7 +1,7 @@
 [workspace]
-resolver = "2"
+resolver = "3"
 members = [
-    "devcontainers",
+    "crates/devcontainers",
 ]
 
 [workspace.package]
@@ -12,5 +12,5 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/portal-co/devil"
 
 [workspace.dependencies]
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
+serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
