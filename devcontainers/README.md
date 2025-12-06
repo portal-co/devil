@@ -19,6 +19,10 @@ This library provides strongly-typed representations of the [Dev Container speci
   - Docker Compose integration
   - And more!
 
+- **Non-exhaustive Structs**: All structs are marked with `#[non_exhaustive]`, allowing the library to add new fields in the future without breaking backward compatibility
+
+- **Default Trait**: All structs implement `Default`, making it easy to create instances and use a builder-like pattern
+
 - **Feature Flag: `allow-unknown-fields`**: Control how unknown JSON fields are handled:
   - **Default behavior**: Unknown fields cause deserialization errors, ensuring strict validation
   - **With feature enabled**: Unknown fields are captured in an `additional_fields` HashMap, allowing forward compatibility with newer devcontainer.json versions
@@ -70,6 +74,20 @@ let json = r#"{
 }"#;
 
 let devcontainer: DevContainer = serde_json::from_str(json)?;
+```
+
+### Using Default for Builder Pattern
+
+```rust
+use devcontainers::DevContainer;
+
+let mut devcontainer = DevContainer::default();
+devcontainer.name = Some("My Container".to_string());
+devcontainer.image = Some("rust:latest".to_string());
+devcontainer.remote_user = Some("vscode".to_string());
+
+let json = serde_json::to_string_pretty(&devcontainer)?;
+println!("{}", json);
 ```
 
 ### Using the `allow-unknown-fields` Feature

@@ -1,2 +1,39 @@
 # devil
-Devcontainer generator
+
+Devcontainer generator and utilities for working with Dev Container configurations.
+
+## Workspace Structure
+
+This is a Cargo workspace containing the following crates:
+
+### `devcontainers`
+
+A Rust library for parsing and working with devcontainer.json files according to the [Dev Container specification](https://containers.dev/).
+
+Features:
+- Comprehensive type support for all devcontainer.json fields
+- Strict validation by default, with optional support for unknown fields
+- All structs are `non_exhaustive` for forward compatibility
+- `Default` implementations for convenient construction
+
+See the [devcontainers README](devcontainers/README.md) for detailed usage information.
+
+## Building
+
+```bash
+cargo build
+```
+
+## Testing
+
+```bash
+# Run all tests
+cargo test
+
+# Run tests with allow-unknown-fields feature
+cargo test --features allow-unknown-fields
+```
+
+## License
+
+MIT OR Apache-2.0
