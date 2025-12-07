@@ -207,7 +207,9 @@ pub struct ServicePort {
 
 impl ServicePort {
     /// Parse a service:port string
-    /// Uses rsplit_once to support service names containing ':' characters
+    /// 
+    /// Uses rsplit_once to split on the rightmost colon, allowing service names
+    /// to contain colons. For example, "my:service:8080" parses as service="my:service", port=8080.
     pub fn parse(s: &str) -> Option<Self> {
         let (service, port_str) = s.rsplit_once(':')?;
         
