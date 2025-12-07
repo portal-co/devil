@@ -208,16 +208,20 @@ pub struct ServicePort {
 impl ServicePort {
     /// Parse a service:port string
     pub fn parse(s: &str) -> Option<Self> {
-        let parts: Vec<&str> = s.split(':').collect();
-        if parts.len() == 2 {
-            if let Ok(port) = parts[1].parse::<u16>() {
-                return Some(ServicePort {
-                    service: parts[0].to_string(),
-                    port,
-                });
-            }
+        let (service, port_str) = s.split_once(':')?;
+        
+        // Validate service name is not empty
+        if service.is_empty() {
+            return None;
         }
-        None
+        
+        // Parse port
+        let port = port_str.parse::<u16>().ok()?;
+        
+        Some(ServicePort {
+            service: service.to_string(),
+            port,
+        })
     }
 }
 
@@ -232,7 +236,6 @@ impl Serialize for ServicePort {
     where
         S: serde::Serializer,
     {
-        use alloc::string::ToString;
         serializer.serialize_str(&self.to_string())
     }
 }
