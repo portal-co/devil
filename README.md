@@ -12,10 +12,12 @@ A `no_std` compatible Rust library for parsing and working with devcontainer.jso
 
 Features:
 - **`no_std` compatible** - uses `alloc` for dynamic allocations
+- **Improved type safety** - structured types for ports and commands
+- **Optional feature flags** - `vscode`, `docker-compose`, `allow-unknown-fields`
 - Comprehensive type support for all devcontainer.json fields
 - Uses `BTreeMap` for deterministic ordering
 - Strict validation by default, with optional support for unknown fields
-- All structs are `non_exhaustive` for forward compatibility
+- All structs and enums are `non_exhaustive` for forward compatibility
 - `Default` implementations for convenient construction
 
 See the [devcontainers README](crates/devcontainers/README.md) for detailed usage information.
@@ -32,8 +34,10 @@ cargo build
 # Run all tests
 cargo test
 
-# Run tests with allow-unknown-fields feature
-cargo test --features allow-unknown-fields
+# Run tests with specific features
+cargo test --features vscode
+cargo test --features docker-compose
+cargo test --all-features
 ```
 
 ## License

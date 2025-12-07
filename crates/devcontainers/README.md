@@ -30,7 +30,12 @@ This library provides strongly-typed representations of the [Dev Container speci
 - **Optional Feature Flags**: Fine-grained control over what's included:
   - **`allow-unknown-fields`**: Capture unknown JSON fields in an `additional_fields` BTreeMap for forward compatibility
   - **`vscode`**: Enable VS Code-specific fields (extensions, settings)
-  - **`docker-compose`**: Enable Docker Compose support (dockerComposeFile, service)
+  - **`docker-compose`**: Enable Docker Compose support (dockerComposeFile, service, and StopCompose shutdown action)
+
+- **Improved Type Safety**: 
+  - **`ServicePort`**: Structured type for port specifications with service names (e.g., "db:5432"), supporting service names containing colons
+  - **`CommandSpec` & `LifecycleCommand`**: Split command specifications into basic commands (Shell/Args) and lifecycle commands (Command/Object) for clearer semantics
+  - **Non-exhaustive enums**: All enums marked `#[non_exhaustive]` for future extensibility
 
 ## Usage
 
@@ -178,6 +183,29 @@ cargo test --features vscode
 cargo test --features docker-compose
 cargo test --all-features
 ```
+
+## Recent Improvements
+
+### Type Safety Enhancements
+
+- **ServicePort**: Changed from plain string to structured type with validated service name and port fields
+  - Supports service names containing colons (e.g., "my:service:name:8080")
+  - Uses `rsplit_once` to correctly parse the rightmost colon as the port separator
+  
+- **Command Types**: Split into two enums for clearer semantics:
+  - `CommandSpec`: Basic commands with `Shell(String)` and `Args(Vec<String>)` variants
+  - `LifecycleCommand`: Lifecycle hooks with `Command(CommandSpec)` or `Object(BTreeMap<String, CommandSpec>)` variants
+
+### Feature Gates
+
+- **`vscode` feature**: Gates VS Code-specific fields (extensions, settings) for use with alternative IDEs
+- **`docker-compose` feature**: Gates Docker Compose-specific fields and the `StopCompose` shutdown action for use with alternative container runtimes
+
+### Future Compatibility
+
+- All structs and enums marked `#[non_exhaustive]` to allow adding new fields/variants without breaking changes
+- `Default` trait implemented on all structs for easy construction
+- Optional `allow-unknown-fields` feature to capture unrecognized JSON fields
 
 ## License
 

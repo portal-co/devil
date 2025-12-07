@@ -207,8 +207,9 @@ pub struct ServicePort {
 
 impl ServicePort {
     /// Parse a service:port string
+    /// Uses rsplit_once to support service names containing ':' characters
     pub fn parse(s: &str) -> Option<Self> {
-        let (service, port_str) = s.split_once(':')?;
+        let (service, port_str) = s.rsplit_once(':')?;
         
         // Validate service name is not empty
         if service.is_empty() {
@@ -314,6 +315,7 @@ pub enum LifecycleCommand {
 
 /// Shutdown action
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[non_exhaustive]
 #[serde(rename_all = "camelCase")]
 pub enum ShutdownAction {
     /// No action
@@ -321,6 +323,7 @@ pub enum ShutdownAction {
     /// Stop the container
     StopContainer,
     /// Stop Docker Compose
+    #[cfg(feature = "docker-compose")]
     StopCompose,
 }
 
