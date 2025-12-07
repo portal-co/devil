@@ -27,9 +27,10 @@ This library provides strongly-typed representations of the [Dev Container speci
 
 - **Default Trait**: All structs implement `Default`, making it easy to create instances and use a builder-like pattern
 
-- **Feature Flag: `allow-unknown-fields`**: Control how unknown JSON fields are handled:
-  - **Default behavior**: Unknown fields cause deserialization errors, ensuring strict validation
-  - **With feature enabled**: Unknown fields are captured in an `additional_fields` BTreeMap, allowing forward compatibility with newer devcontainer.json versions
+- **Optional Feature Flags**: Fine-grained control over what's included:
+  - **`allow-unknown-fields`**: Capture unknown JSON fields in an `additional_fields` BTreeMap for forward compatibility
+  - **`vscode`**: Enable VS Code-specific fields (extensions, settings)
+  - **`docker-compose`**: Enable Docker Compose support (dockerComposeFile, service)
 
 ## Usage
 
@@ -94,16 +95,60 @@ let json = serde_json::to_string_pretty(&devcontainer)?;
 println!("{}", json);
 ```
 
-### Using the `allow-unknown-fields` Feature
+### Using Optional Features
 
-Enable the feature in your `Cargo.toml`:
+Enable specific features in your `Cargo.toml` based on your needs:
 
 ```toml
 [dependencies]
-devcontainers = { version = "0.1", features = ["allow-unknown-fields"] }
+# For VS Code extension and settings support
+devcontainers = { version = "0.1", features = ["vscode"] }
+
+# For Docker Compose support
+devcontainers = { version = "0.1", features = ["docker-compose"] }
+
+# For all features
+devcontainers = { version = "0.1", features = ["vscode", "docker-compose", "allow-unknown-fields"] }
 ```
 
-Now unknown fields will be captured:
+#### `vscode` Feature
+
+Enables VS Code-specific fields:
+
+```rust
+use devcontainers::DevContainer;
+
+let json = r#"{
+    "name": "VS Code Container",
+    "image": "ubuntu:latest",
+    "extensions": ["rust-lang.rust-analyzer"],
+    "settings": {
+        "terminal.integrated.shell.linux": "/bin/bash"
+    }
+}"#;
+
+let devcontainer: DevContainer = serde_json::from_str(json)?;
+```
+
+#### `docker-compose` Feature
+
+Enables Docker Compose integration:
+
+```rust
+use devcontainers::DevContainer;
+
+let json = r#"{
+    "name": "Compose Container",
+    "dockerComposeFile": "docker-compose.yml",
+    "service": "app"
+}"#;
+
+let devcontainer: DevContainer = serde_json::from_str(json)?;
+```
+
+#### `allow-unknown-fields` Feature
+
+Captures unknown fields for forward compatibility:
 
 ```rust
 use devcontainers::DevContainer;
@@ -122,14 +167,16 @@ println!("Additional fields: {:?}", devcontainer.additional_fields);
 
 ## Testing
 
-Run tests without the feature (strict mode):
+Run tests without features:
 ```bash
 cargo test
 ```
 
-Run tests with the feature enabled:
+Run tests with specific features:
 ```bash
-cargo test --features allow-unknown-fields
+cargo test --features vscode
+cargo test --features docker-compose
+cargo test --all-features
 ```
 
 ## License

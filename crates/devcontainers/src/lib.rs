@@ -31,7 +31,7 @@
 extern crate alloc;
 
 use alloc::collections::BTreeMap;
-use alloc::string::String;
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use serde::{Deserialize, Serialize};
 
@@ -61,10 +61,12 @@ pub struct DevContainer {
     pub features: Option<BTreeMap<String, serde_json::Value>>,
 
     /// VS Code extensions to install
+    #[cfg(feature = "vscode")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub extensions: Option<Vec<String>>,
 
     /// VS Code settings for the container
+    #[cfg(feature = "vscode")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub settings: Option<BTreeMap<String, serde_json::Value>>,
 
@@ -105,15 +107,15 @@ pub struct DevContainer {
 
     /// Command to run after container creation
     #[serde(skip_serializing_if = "Option::is_none", rename = "postCreateCommand")]
-    pub post_create_command: Option<CommandSpec>,
+    pub post_create_command: Option<LifecycleCommand>,
 
     /// Command to run after container starts
     #[serde(skip_serializing_if = "Option::is_none", rename = "postStartCommand")]
-    pub post_start_command: Option<CommandSpec>,
+    pub post_start_command: Option<LifecycleCommand>,
 
     /// Command to run after attaching to the container
     #[serde(skip_serializing_if = "Option::is_none", rename = "postAttachCommand")]
-    pub post_attach_command: Option<CommandSpec>,
+    pub post_attach_command: Option<LifecycleCommand>,
 
     /// IDE-specific customizations
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -144,10 +146,12 @@ pub struct DevContainer {
     pub run_args: Option<Vec<String>>,
 
     /// Docker Compose file reference
+    #[cfg(feature = "docker-compose")]
     #[serde(skip_serializing_if = "Option::is_none", rename = "dockerComposeFile")]
     pub docker_compose_file: Option<DockerComposeFile>,
 
     /// Service name when using Docker Compose
+    #[cfg(feature = "docker-compose")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub service: Option<String>,
 
@@ -192,14 +196,66 @@ pub struct BuildConfig {
     pub additional_fields: BTreeMap<String, serde_json::Value>,
 }
 
-/// Port specification (can be a number or string)
+/// Service port specification
+#[derive(Debug, Clone, PartialEq)]
+pub struct ServicePort {
+    /// Service name
+    pub service: String,
+    /// Port number
+    pub port: u16,
+}
+
+impl ServicePort {
+    /// Parse a service:port string
+    pub fn parse(s: &str) -> Option<Self> {
+        let parts: Vec<&str> = s.split(':').collect();
+        if parts.len() == 2 {
+            if let Ok(port) = parts[1].parse::<u16>() {
+                return Some(ServicePort {
+                    service: parts[0].to_string(),
+                    port,
+                });
+            }
+        }
+        None
+    }
+}
+
+impl core::fmt::Display for ServicePort {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{}:{}", self.service, self.port)
+    }
+}
+
+impl Serialize for ServicePort {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use alloc::string::ToString;
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+impl<'de> Deserialize<'de> for ServicePort {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        ServicePort::parse(&s)
+            .ok_or_else(|| serde::de::Error::custom("Expected format 'service:port'"))
+    }
+}
+
+/// Port specification (can be a number or service:port)
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum PortSpec {
     /// Numeric port
     Number(u16),
-    /// String port specification (e.g., "db:5432")
-    String(String),
+    /// Service name with port specification (e.g., "db:5432")
+    Service(ServicePort),
 }
 
 /// Port attributes configuration
@@ -233,16 +289,24 @@ pub struct PortAttributes {
     pub additional_fields: BTreeMap<String, serde_json::Value>,
 }
 
-/// Command specification (can be a string, array, or object)
+/// Basic command specification (shell or args)
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum CommandSpec {
-    /// Single command string
-    String(String),
-    /// Array of command parts
-    Array(Vec<String>),
-    /// Object with multiple commands
-    Object(BTreeMap<String, String>),
+    /// Shell command string
+    Shell(String),
+    /// Array of command arguments
+    Args(Vec<String>),
+}
+
+/// Lifecycle command specification (can be a command or object of commands)
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum LifecycleCommand {
+    /// Single command
+    Command(CommandSpec),
+    /// Object with multiple named commands
+    Object(BTreeMap<String, CommandSpec>),
 }
 
 /// Shutdown action
@@ -281,6 +345,7 @@ pub struct MountSpec {
 }
 
 /// Docker Compose file specification
+#[cfg(feature = "docker-compose")]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum DockerComposeFile {
@@ -294,6 +359,7 @@ pub enum DockerComposeFile {
 mod tests {
     use super::*;
     use alloc::string::ToString;
+    #[cfg(feature = "vscode")]
     use alloc::vec;
 
     #[test]
@@ -332,6 +398,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "vscode")]
     fn test_with_features_and_extensions() {
         let json = r#"{
             "name": "Feature Test",
@@ -349,6 +416,21 @@ mod tests {
         assert!(devcontainer.features.is_some());
         assert!(devcontainer.extensions.is_some());
         assert_eq!(devcontainer.extensions.unwrap().len(), 2);
+    }
+
+    #[test]
+    #[cfg(not(feature = "vscode"))]
+    fn test_with_features_no_vscode() {
+        let json = r#"{
+            "name": "Feature Test",
+            "image": "ubuntu:latest",
+            "features": {
+                "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+            }
+        }"#;
+
+        let devcontainer: DevContainer = serde_json::from_str(json).unwrap();
+        assert!(devcontainer.features.is_some());
     }
 
     #[test]
@@ -403,38 +485,13 @@ mod tests {
 
     #[test]
     fn test_serialization_roundtrip() {
-        let devcontainer = DevContainer {
-            name: Some("Test".to_string()),
-            image: Some("ubuntu:latest".to_string()),
-            docker_file: None,
-            build: None,
-            features: None,
-            extensions: Some(vec!["test.extension".to_string()]),
-            settings: None,
-            forward_ports: None,
-            ports_attributes: None,
-            other_ports_attributes: None,
-            container_env: None,
-            remote_env: None,
-            remote_user: None,
-            container_user: None,
-            workspace_folder: None,
-            post_create_command: None,
-            post_start_command: None,
-            post_attach_command: None,
-            customizations: None,
-            init: None,
-            privileged: None,
-            override_command: None,
-            shutdown_action: None,
-            mounts: None,
-            run_args: None,
-            docker_compose_file: None,
-            service: None,
-            workspace_mount: None,
-            #[cfg(feature = "allow-unknown-fields")]
-            additional_fields: BTreeMap::new(),
-        };
+        let mut devcontainer = DevContainer::default();
+        devcontainer.name = Some("Test".to_string());
+        devcontainer.image = Some("ubuntu:latest".to_string());
+        #[cfg(feature = "vscode")]
+        {
+            devcontainer.extensions = Some(vec!["test.extension".to_string()]);
+        }
 
         let json = serde_json::to_string(&devcontainer).unwrap();
         let parsed: DevContainer = serde_json::from_str(&json).unwrap();

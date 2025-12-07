@@ -11,6 +11,10 @@ description = "A Rust library for parsing and working with devcontainer.json fil
 default = []
 # Feature to allow handling unknown fields in JSON
 allow-unknown-fields = []
+# Feature to enable VSCode-specific fields like extensions and settings
+vscode = []
+# Feature to enable Docker Compose support
+docker-compose = []
 
 [dependencies]
 serde.workspace = true

@@ -26,6 +26,7 @@ fn main() {
             println!("  Name: {:?}", container.name);
             println!("  Image: {:?}", container.image);
             println!("  Remote User: {:?}", container.remote_user);
+            #[cfg(feature = "vscode")]
             if let Some(extensions) = &container.extensions {
                 println!("  Extensions: {} installed", extensions.len());
             }
