@@ -45,10 +45,11 @@ cargo test --all-features
 MPL-2.0
 
 ## Goals
-- [ ] Add project goals
+- [ ] Standardize DevContainer configurations
+- [ ] Maintain `no_std` compatibility for parsing library
 
 ## Progress
-- [ ] Initial setup
+- [ ] `devcontainers` crate implemented with extensive feature support
 
 ---
 *AI assisted*
